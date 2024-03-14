@@ -1,0 +1,23 @@
+version: '3'
+services:
+  database:
+    image: postgres:15-alpine
+    ports:
+      - "${DOCKER_HOST_POSTGRES_PORT:-5451}:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mypayment
+    volumes:
+      - ./docker/postgres/initscripts/:/docker-entrypoint-initdb.d/
+    command: "postgres -c log_statement=all -c log_destination=stderr"
+
+  migrate:
+    image: migrate/migrate:v4.15.2
+    restart: "no"
+    depends_on:
+      - database
+    volumes:
+      - ./migrations:/migrations
+    entrypoint: [ "migrate", "--path=/migrations", "--database=postgres://user:password@database:5432/mypayment?sslmode=disable" ]
+    command: [ "up" ]
